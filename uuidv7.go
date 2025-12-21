@@ -34,6 +34,7 @@ type Generator struct {
 }
 
 // NewGenerator creates a new UUIDv7 generator with default buffer size (256 bytes = 32 UUIDs)
+// 256 seems to be where diminishing returns start to kick in
 func NewGenerator() *Generator {
 	return NewGeneratorWithBufferSize(256)
 }
