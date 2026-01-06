@@ -1,4 +1,4 @@
-package uuid
+package uuidv7
 
 import (
 	"crypto/rand"
@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// UUIDv7 represents a UUIDv7 version 7 (16 bytes)
+// UUIDv7 represents a UUID version 7 (16 bytes)
 type UUIDv7 [16]byte
 
 var (
@@ -25,7 +25,7 @@ type Generator struct {
 	cursor            int
 }
 
-// NewGenerator creates a new UUIDv7 generator with default buffer size (256 bytes = 32 UUIDs)
+// NewGenerator creates a new UUIDv7 generator with default buffer size (256 bytes = 32 UUIDv7s)
 // 256 seems to be where diminishing returns start to kick in
 func NewGenerator() *Generator {
 	return NewGeneratorWithBufferSize(256)
@@ -48,11 +48,11 @@ func NewV7() UUIDv7 {
 	defaultGeneratorOnce.Do(func() {
 		defaultGenerator = NewGenerator()
 	})
-	return defaultGenerator.NewV7()
+	return defaultGenerator.Next()
 }
 
-// NewV7 generates a new UUIDv7
-func (g *Generator) NewV7() UUIDv7 {
+// Next generates a new UUIDv7
+func (g *Generator) Next() UUIDv7 {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
@@ -75,7 +75,7 @@ func (g *Generator) NewV7() UUIDv7 {
 	// Get random bytes from buffer
 	randBytes := g.nextRandBytes()
 
-	// Build UUID
+	// Build the UUIDv7
 	var uuid UUIDv7
 
 	// Bytes 0-5: 48-bit timestamp (big-endian)

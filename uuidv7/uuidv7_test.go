@@ -1,4 +1,4 @@
-package uuid
+package uuidv7
 
 import (
 	"testing"
@@ -53,11 +53,11 @@ func TestNewV7TimestampOrdering(t *testing.T) {
 	}
 }
 
-func TestGeneratorNewV7(t *testing.T) {
+func TestGeneratorNew(t *testing.T) {
 	gen := NewGenerator()
-	uuid := gen.NewV7()
+	uuid := gen.Next()
 	if uuid == [16]byte{} {
-		t.Error("Generator.NewV7() returned zero UUID")
+		t.Error("Generator.New() returned zero UUID")
 	}
 }
 
@@ -65,7 +65,7 @@ func TestGeneratorUniqueness(t *testing.T) {
 	gen := NewGenerator()
 	seen := make(map[UUIDv7]bool)
 	for i := range 1000 {
-		uuid := gen.NewV7()
+		uuid := gen.Next()
 		if seen[uuid] {
 			t.Errorf("Duplicate UUID generated at iteration %d", i)
 		}
@@ -77,8 +77,8 @@ func TestMultipleGenerators(t *testing.T) {
 	gen1 := NewGenerator()
 	gen2 := NewGenerator()
 
-	uuid1 := gen1.NewV7()
-	uuid2 := gen2.NewV7()
+	uuid1 := gen1.Next()
+	uuid2 := gen2.Next()
 
 	if uuid1 == uuid2 {
 		t.Error("Different generators produced identical UUIDs")
@@ -91,7 +91,7 @@ func TestGeneratorCounterSequencing(t *testing.T) {
 	// Generate multiple UUIDs rapidly to test counter increment
 	uuids := make([]UUIDv7, 100)
 	for i := range 100 {
-		uuids[i] = gen.NewV7()
+		uuids[i] = gen.Next()
 	}
 
 	// All should be unique
@@ -106,7 +106,7 @@ func TestGeneratorCounterSequencing(t *testing.T) {
 
 func TestNewGeneratorWithBufferSize(t *testing.T) {
 	gen := NewGeneratorWithBufferSize(16)
-	uuid := gen.NewV7()
+	uuid := gen.Next()
 	if uuid == [16]byte{} {
 		t.Error("NewGeneratorWithBufferSize() returned generator that produces zero UUID")
 	}
@@ -114,7 +114,7 @@ func TestNewGeneratorWithBufferSize(t *testing.T) {
 
 func TestNewGeneratorWithBufferSizeMinimum(t *testing.T) {
 	gen := NewGeneratorWithBufferSize(4)
-	uuid := gen.NewV7()
+	uuid := gen.Next()
 	if uuid == [16]byte{} {
 		t.Error("NewGeneratorWithBufferSize() with small size failed")
 	}
@@ -160,7 +160,7 @@ func TestGeneratorConcurrent(t *testing.T) {
 	for range numGoroutines {
 		go func() {
 			for range numUUIDsPerGoroutine {
-				results <- gen.NewV7()
+				results <- gen.Next()
 			}
 		}()
 	}
