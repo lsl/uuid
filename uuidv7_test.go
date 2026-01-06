@@ -14,7 +14,7 @@ func TestNewV7(t *testing.T) {
 
 func TestNewV7Uniqueness(t *testing.T) {
 	seen := make(map[UUIDv7]bool)
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		uuid := NewV7()
 		if seen[uuid] {
 			t.Errorf("Duplicate UUID generated at iteration %d", i)
@@ -64,7 +64,7 @@ func TestGeneratorNewV7(t *testing.T) {
 func TestGeneratorUniqueness(t *testing.T) {
 	gen := NewGenerator()
 	seen := make(map[UUIDv7]bool)
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		uuid := gen.NewV7()
 		if seen[uuid] {
 			t.Errorf("Duplicate UUID generated at iteration %d", i)
@@ -90,7 +90,7 @@ func TestGeneratorCounterSequencing(t *testing.T) {
 
 	// Generate multiple UUIDs rapidly to test counter increment
 	uuids := make([]UUIDv7, 100)
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		uuids[i] = gen.NewV7()
 	}
 
@@ -126,16 +126,16 @@ func TestNewV7Concurrent(t *testing.T) {
 
 	results := make(chan UUIDv7, numGoroutines*numUUIDsPerGoroutine)
 
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		go func() {
-			for j := 0; j < numUUIDsPerGoroutine; j++ {
+			for range numUUIDsPerGoroutine {
 				results <- NewV7()
 			}
 		}()
 	}
 
 	seen := make(map[UUIDv7]bool)
-	for i := 0; i < numGoroutines*numUUIDsPerGoroutine; i++ {
+	for i := range numGoroutines * numUUIDsPerGoroutine {
 		uuid := <-results
 		if seen[uuid] {
 			t.Errorf("Duplicate UUID generated concurrently at iteration %d", i)
@@ -157,16 +157,16 @@ func TestGeneratorConcurrent(t *testing.T) {
 	gen := NewGenerator()
 	results := make(chan UUIDv7, numGoroutines*numUUIDsPerGoroutine)
 
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		go func() {
-			for j := 0; j < numUUIDsPerGoroutine; j++ {
+			for range numUUIDsPerGoroutine {
 				results <- gen.NewV7()
 			}
 		}()
 	}
 
 	seen := make(map[UUIDv7]bool)
-	for i := 0; i < numGoroutines*numUUIDsPerGoroutine; i++ {
+	for i := range numGoroutines * numUUIDsPerGoroutine {
 		uuid := <-results
 		if seen[uuid] {
 			t.Errorf("Duplicate UUID generated concurrently at iteration %d", i)
