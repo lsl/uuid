@@ -19,69 +19,46 @@ import (
 type UUIDv7 [16]byte
 
 var (
-	defaultGenerator     *Generator
-	defaultGeneratorOnce sync.Once
-)
-
-// Generator generates UUIDv7 values with counter-based sequencing and buffered random bytes
-type Generator struct {
 	mu                sync.Mutex
 	lastTime          uint64
 	clockSequence     uint16
 	clockSequenceOnce sync.Once
 	buffer            []byte
 	cursor            int
-}
+	bufferOnce        sync.Once
+)
 
-// NewGenerator creates a new UUIDv7 generator with default buffer size (256 bytes = 32 UUIDv7s)
-// 256 seems to be where diminishing returns start to kick in
-func NewGenerator() *Generator {
-	return NewGeneratorWithBufferSize(256)
-}
+const defaultBufferSize = 256
 
-// NewGeneratorWithBufferSize creates a new UUIDv7 generator with a custom buffer size
-// Buffer size should be a multiple of 8 (bytes needed per UUID for random data)
-func NewGeneratorWithBufferSize(bufferSize int) *Generator {
-	if bufferSize < 8 {
-		bufferSize = 8 // Minimum size
-	}
-	return &Generator{
-		buffer: make([]byte, bufferSize),
-		cursor: bufferSize, // Start at end to trigger initial fill
-	}
-}
-
-// NewV7 generates a new UUIDv7 using the default generator
+// NewV7 generates a new UUIDv7
 func NewV7() UUIDv7 {
-	defaultGeneratorOnce.Do(func() {
-		defaultGenerator = NewGenerator()
-	})
-	return defaultGenerator.Next()
-}
+	mu.Lock()
+	defer mu.Unlock()
 
-// Next generates a new UUIDv7
-func (g *Generator) Next() UUIDv7 {
-	g.mu.Lock()
-	defer g.mu.Unlock()
+	// Initialize buffer on first use
+	bufferOnce.Do(func() {
+		buffer = make([]byte, defaultBufferSize)
+		cursor = defaultBufferSize // Start at end to trigger initial fill
+	})
 
 	// Initialize counter randomly on first use
-	g.clockSequenceOnce.Do(func() {
+	clockSequenceOnce.Do(func() {
 		buf := make([]byte, 2)
 		_, _ = rand.Read(buf)
-		g.clockSequence = binary.BigEndian.Uint16(buf)
+		clockSequence = binary.BigEndian.Uint16(buf)
 	})
 
 	// Get current time in milliseconds
 	timeNow := uint64(time.Now().UnixMilli())
 
 	// Increment counter if time hasn't changed
-	if timeNow <= g.lastTime {
-		g.clockSequence++
+	if timeNow <= lastTime {
+		clockSequence++
 	}
-	g.lastTime = timeNow
+	lastTime = timeNow
 
 	// Get random bytes from buffer
-	randBytes := g.nextRandBytes()
+	randBytes := nextRandBytes()
 
 	// Build the UUIDv7
 	var uuid UUIDv7
@@ -95,7 +72,7 @@ func (g *Generator) Next() UUIDv7 {
 	uuid[5] = byte(timeNow)
 
 	// Bytes 6-7: version (0x70) + sequence
-	binary.BigEndian.PutUint16(uuid[6:8], g.clockSequence)
+	binary.BigEndian.PutUint16(uuid[6:8], clockSequence)
 	uuid[6] = (uuid[6] & 0x0f) | 0x70 // Set version bits
 
 	// Bytes 8-15: random bytes from buffer
@@ -108,14 +85,14 @@ func (g *Generator) Next() UUIDv7 {
 }
 
 // nextRandBytes returns the next 8 random bytes from the buffer, refilling if needed
-func (g *Generator) nextRandBytes() []byte {
-	g.cursor += 8
-	end := g.cursor + 8
-	if end > len(g.buffer) {
+func nextRandBytes() []byte {
+	cursor += 8
+	end := cursor + 8
+	if end > len(buffer) {
 		// Refill buffer
-		_, _ = rand.Read(g.buffer)
-		g.cursor = 0
+		_, _ = rand.Read(buffer)
+		cursor = 0
 		end = 8
 	}
-	return g.buffer[g.cursor:end]
+	return buffer[cursor:end]
 }

@@ -53,45 +53,11 @@ func TestNewV7TimestampOrdering(t *testing.T) {
 	}
 }
 
-func TestGeneratorNew(t *testing.T) {
-	gen := NewGenerator()
-	uuid := gen.Next()
-	if uuid == [16]byte{} {
-		t.Error("Generator.New() returned zero UUID")
-	}
-}
-
-func TestGeneratorUniqueness(t *testing.T) {
-	gen := NewGenerator()
-	seen := make(map[UUIDv7]bool)
-	for i := range 1000 {
-		uuid := gen.Next()
-		if seen[uuid] {
-			t.Errorf("Duplicate UUID generated at iteration %d", i)
-		}
-		seen[uuid] = true
-	}
-}
-
-func TestMultipleGenerators(t *testing.T) {
-	gen1 := NewGenerator()
-	gen2 := NewGenerator()
-
-	uuid1 := gen1.Next()
-	uuid2 := gen2.Next()
-
-	if uuid1 == uuid2 {
-		t.Error("Different generators produced identical UUIDs")
-	}
-}
-
-func TestGeneratorCounterSequencing(t *testing.T) {
-	gen := NewGenerator()
-
+func TestNewV7CounterSequencing(t *testing.T) {
 	// Generate multiple UUIDs rapidly to test counter increment
 	uuids := make([]UUIDv7, 100)
 	for i := range 100 {
-		uuids[i] = gen.Next()
+		uuids[i] = NewV7()
 	}
 
 	// All should be unique
@@ -101,22 +67,6 @@ func TestGeneratorCounterSequencing(t *testing.T) {
 			t.Errorf("Duplicate UUID at index %d", i)
 		}
 		seen[uuid] = true
-	}
-}
-
-func TestNewGeneratorWithBufferSize(t *testing.T) {
-	gen := NewGeneratorWithBufferSize(16)
-	uuid := gen.Next()
-	if uuid == [16]byte{} {
-		t.Error("NewGeneratorWithBufferSize() returned generator that produces zero UUID")
-	}
-}
-
-func TestNewGeneratorWithBufferSizeMinimum(t *testing.T) {
-	gen := NewGeneratorWithBufferSize(4)
-	uuid := gen.Next()
-	if uuid == [16]byte{} {
-		t.Error("NewGeneratorWithBufferSize() with small size failed")
 	}
 }
 
@@ -150,27 +100,8 @@ func TestNewV7Concurrent(t *testing.T) {
 	}
 }
 
-func TestGeneratorConcurrent(t *testing.T) {
-	const numGoroutines = 100
-	const numUUIDsPerGoroutine = 100
-
-	gen := NewGenerator()
-	results := make(chan UUIDv7, numGoroutines*numUUIDsPerGoroutine)
-
-	for range numGoroutines {
-		go func() {
-			for range numUUIDsPerGoroutine {
-				results <- gen.Next()
-			}
-		}()
-	}
-
-	seen := make(map[UUIDv7]bool)
-	for i := range numGoroutines * numUUIDsPerGoroutine {
-		uuid := <-results
-		if seen[uuid] {
-			t.Errorf("Duplicate UUID generated concurrently at iteration %d", i)
-		}
-		seen[uuid] = true
+func BenchmarkNewV7(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		NewV7()
 	}
 }
