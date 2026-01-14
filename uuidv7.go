@@ -6,7 +6,7 @@
 //
 // Modifications Copyright 2026 Louis Laugesen <louis@lgsn.dev>
 
-package uuidv7
+package uuid
 
 import (
 	"crypto/rand"
